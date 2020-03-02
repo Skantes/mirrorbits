@@ -337,10 +337,15 @@ func (h *HTTP) mirrorHandler(w http.ResponseWriter, r *http.Request, ctx *Contex
 		http.Error(w, err.Error(), status)
 	}
 
+	isTracked, err := h.metrics.IsFileTracked(fileInfo.Path)
+	if err != nil {
+		log.Error("There was a problem fetching the tracked file list: ", err)
+	}
+
 	if !ctx.IsMirrorlist() {
 		logs.LogDownload(resultRenderer.Type(), status, results, err)
 		if len(mlist) > 0 {
-			h.stats.CountDownload(mlist[0], fileInfo, clientInfo)
+			h.stats.CountDownload(mlist[0], fileInfo, clientInfo, isTracked)
 		}
 	}
 
