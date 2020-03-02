@@ -368,12 +368,20 @@ func (h *HTTP) mirrorHandler(w http.ResponseWriter, r *http.Request, ctx *Contex
 		http.Error(w, err.Error(), status)
 	}
 
+	var isTracked = false
+	if config.GetConfig().MetricsEnabled {
+		isTracked, err = h.metrics.IsFileTracked(fileInfo.Path)
+		if err != nil {
+			log.Error("There was a problem fetching the tracked file list: ", err)
+		}
+	}
+
 	if !ctx.IsMirrorlist() {
 		logs.LogDownload(resultRenderer.Type(), r.Method, status, results, err)
 		if len(mlist) > 0 && r.Method == "GET" && resultRenderer.Type() == "REDIRECT" {
 			timeout := GetConfig().SameDownloadInterval
 			if r.Header.Get("Range") == "" || timeout == 0 {
-				h.stats.CountDownload(mlist[0], fileInfo, clientInfo)
+				h.stats.CountDownload(mlist[0], fileInfo, clientInfo, isTracked)
 			} else {
 				downloaderID := remoteIP + "/" + r.Header.Get("User-Agent")
 				hash := sha256.New()
@@ -399,7 +407,7 @@ func (h *HTTP) mirrorHandler(w http.ResponseWriter, r *http.Request, ctx *Contex
 					// from counting multiple times a single client
 					// downloading a single file in pieces, such as
 					// torrent clients when files are used as web seeds.
-					h.stats.CountDownload(mlist[0], fileInfo, clientInfo)
+					h.stats.CountDownload(mlist[0], fileInfo, clientInfo, isTracked)
 				}
 
 				if !h.redis.IsAtLeastVersion("6.2.0") {
