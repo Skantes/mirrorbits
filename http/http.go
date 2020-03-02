@@ -19,6 +19,7 @@ import (
 	"time"
 
 	systemd "github.com/coreos/go-systemd/daemon"
+	"github.com/etix/mirrorbits/config"
 	. "github.com/etix/mirrorbits/config"
 	"github.com/etix/mirrorbits/core"
 	"github.com/etix/mirrorbits/database"
@@ -50,6 +51,7 @@ type HTTP struct {
 	Restarting     bool
 	stopped        bool
 	stoppedMutex   sync.Mutex
+	metrics        *Metrics
 }
 
 // Templates is a struct embedding instances of the precompiled templates
@@ -72,6 +74,11 @@ func HTTPServer(redis *database.Redis, cache *mirrors.Cache) *HTTP {
 	h.stats = NewStats(redis)
 	h.engine = DefaultEngine{}
 	http.Handle("/", NewGzipHandler(h.requestDispatcher))
+
+	if config.GetConfig().MetricsEnabled {
+		h.metrics = NewMetrics(redis)
+		http.Handle("/metrics", NewGzipHandler(h.metricsHandler))
+	}
 
 	// Load the GeoIP databases
 	if err := h.geoip.LoadGeoIP(); err != nil {
