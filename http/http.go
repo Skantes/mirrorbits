@@ -233,7 +233,13 @@ func (h *HTTP) mirrorHandler(w http.ResponseWriter, r *http.Request, ctx *Contex
 
 	fileInfo := filesystem.NewFileInfo(urlPath)
 
-	remoteIP := network.ExtractRemoteIP(r.Header.Get("X-Forwarded-For"))
+	var remoteIP string
+	// This http header should only be used in the context of testing geoip
+	if r.Header.Get("X-Fake-Ip") != "" {
+		remoteIP = network.ExtractRemoteIP(r.Header.Get("X-Fake-Ip"))
+	} else {
+		remoteIP = network.ExtractRemoteIP(r.Header.Get("X-Forwarded-For"))
+	}
 	if len(remoteIP) == 0 {
 		remoteIP = network.RemoteIPFromAddr(r.RemoteAddr)
 	}
@@ -246,6 +252,14 @@ func (h *HTTP) mirrorHandler(w http.ResponseWriter, r *http.Request, ctx *Contex
 	}
 
 	clientInfo := h.geoip.GetRecord(remoteIP) //TODO return a pointer?
+
+	if clientInfo.Country != "" {
+		err = h.redis.AddCountry(clientInfo.Country)
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	mlist, excluded, err := h.engine.Selection(ctx, h.cache, &fileInfo, clientInfo)
 
@@ -319,7 +333,7 @@ func (h *HTTP) mirrorHandler(w http.ResponseWriter, r *http.Request, ctx *Contex
 	if !ctx.IsMirrorlist() {
 		logs.LogDownload(resultRenderer.Type(), status, results, err)
 		if len(mlist) > 0 {
-			h.stats.CountDownload(mlist[0], fileInfo)
+			h.stats.CountDownload(mlist[0], fileInfo, clientInfo)
 		}
 	}
 
