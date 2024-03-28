@@ -76,8 +76,11 @@ func HTTPServer(redis *database.Redis, cache *mirrors.Cache) *HTTP {
 	http.Handle("/", NewGzipHandler(h.requestDispatcher))
 
 	if config.GetConfig().MetricsEnabled {
+		log.Info("Metrics enabled")
 		h.metrics = NewMetrics(redis)
 		http.Handle("/metrics", NewGzipHandler(h.metricsHandler))
+	} else {
+		log.Info("Metrics not enabled")
 	}
 
 	// Load the GeoIP databases
