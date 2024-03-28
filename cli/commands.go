@@ -359,6 +359,11 @@ func (c *cli) CmdMetrics(args ...string) error {
 	_ = cmd.Bool("auto-disable", false, "Disable automatic addition of new files to tracked files")
 	_ = cmd.Bool("auto-status", true, "Print boolean of automatic addition of new files to tracked files")
 
+	// if !config.GetConfig().MetricsEnabled {
+	// 	log.Info("Metrics are not enabled.")
+	// 	return nil
+	// }
+
 	// Can't use cmd.Parse(args) because it doesn't handle -command without
 	// an argument following which is needed for list
 	if len(args) < 1 || len(args) > 2 {

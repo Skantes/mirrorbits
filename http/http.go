@@ -80,7 +80,7 @@ func HTTPServer(redis *database.Redis, cache *mirrors.Cache) *HTTP {
 		h.metrics = NewMetrics(redis)
 		http.Handle("/metrics", NewGzipHandler(h.metricsHandler))
 	} else {
-		log.Info("Metrics not enabled")
+		log.Info("Metrics disabled")
 	}
 
 	// Load the GeoIP databases
@@ -144,6 +144,14 @@ func (h *HTTP) StopChan() <-chan struct{} {
 func (h *HTTP) Reload() {
 	// Reload the GeoIP database
 	h.geoip.LoadGeoIP()
+
+	if config.GetConfig().MetricsEnabled && h.metrics == nil {
+		log.Info("Configuration Reload: Metrics enabled")
+		h.metrics = NewMetrics(h.redis)
+		http.Handle("/metrics", NewGzipHandler(h.metricsHandler))
+	} else {
+		log.Info("Configuration Reload: Metrics not enabled")
+	}
 
 	// Reload the templates
 	h.templates.Lock()
