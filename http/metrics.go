@@ -142,6 +142,11 @@ func (m *Metrics) getMetrics(httpRedis *database.Redis) {
 		return
 	}
 
+	if len(stats) == 0 {
+		log.Info("Metrics: no files")
+		return
+	}
+
 	var index int64
 	var output string
 	for _, id := range mirrorsIDs {
