@@ -337,9 +337,12 @@ func (h *HTTP) mirrorHandler(w http.ResponseWriter, r *http.Request, ctx *Contex
 		http.Error(w, err.Error(), status)
 	}
 
-	isTracked, err := h.metrics.IsFileTracked(fileInfo.Path)
-	if err != nil {
-		log.Error("There was a problem fetching the tracked file list: ", err)
+	var isTracked = false
+	if config.GetConfig().MetricsEnabled {
+		isTracked, err = h.metrics.IsFileTracked(fileInfo.Path)
+		if err != nil {
+			log.Error("There was a problem fetching the tracked file list: ", err)
+		}
 	}
 
 	if !ctx.IsMirrorlist() {
