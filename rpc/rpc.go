@@ -759,6 +759,10 @@ func (c *CLI) ListMetrics(ctx context.Context, in *Metric) (*MetricsList, error)
 	return &MetricsList{Filename: files}, nil
 }
 
+func (c *CLI) GetStatusMetrics(context.Context, *empty.Empty) (*StatusMetrics, error) {
+	return &Status{Status: GetConfig().MetricsEnabled}, nil
+}
+
 func (c *CLI) EnableAuto(context.Context, *empty.Empty) (*empty.Empty, error) {
 	GetConfig().MetricsAutoTrackedFiles = true
 	return &empty.Empty{}, nil

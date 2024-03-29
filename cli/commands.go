@@ -355,6 +355,7 @@ func (c *cli) CmdMetrics(args ...string) error {
 	_ = cmd.String("add", "", "Add a file to the metrics route")
 	_ = cmd.String("list", "*", "List files in metrics + Optionnal pattern to filter results")
 	_ = cmd.String("delete", "", "Delete a file from the metrics route")
+	_ = cmd.String("status", "*", "Show if metrics are enabled")
 	_ = cmd.Bool("auto-enable", true, "Enable automatic addition of new files to tracked files")
 	_ = cmd.Bool("auto-disable", false, "Disable automatic addition of new files to tracked files")
 	_ = cmd.Bool("auto-status", true, "Print boolean of automatic addition of new files to tracked files")
@@ -451,6 +452,21 @@ func (c *cli) CmdListmetrics(pattern string) error {
 		for _, file := range fileList.Filename {
 			fmt.Println(file)
 		}
+	}
+
+	return nil
+}
+
+func (c *cli) CmdStatusmetrics() error {
+	client := c.GetRPC()
+	ctx, cancel := context.WithTimeout(context.Background(), defaultRPCTimeout)
+	defer cancel()
+	status, _ := client.GetStatusMetrics(ctx, &empty.Empty{})
+
+	if status.Status {
+		log.Info("Metrics are enabled")
+	} else {
+		log.Info("Metrics are disabled")
 	}
 
 	return nil

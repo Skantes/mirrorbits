@@ -1344,6 +1344,45 @@ func (m *StatusAuto) GetStatus() bool {
 	return false
 }
 
+type StatusMetrics struct {
+	Status               bool     `protobuf:"varint,1,opt,name=Status,proto3" json:"Status,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *StatusMetrics) Reset()         { *m = StatusMetrics{} }
+func (m *StatusMetrics) String() string { return proto.CompactTextString(m) }
+func (*StatusMetrics) ProtoMessage()    {}
+func (*StatusMetrics) Descriptor() ([]byte, []int) {
+	return fileDescriptor_77a6da22d6a3feb1, []int{21}
+}
+
+func (m *StatusMetrics) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StatusMetrics.Unmarshal(m, b)
+}
+func (m *StatusMetrics) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StatusMetrics.Marshal(b, m, deterministic)
+}
+func (m *StatusMetrics) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StatusMetrics.Merge(m, src)
+}
+func (m *StatusMetrics) XXX_Size() int {
+	return xxx_messageInfo_StatusMetrics.Size(m)
+}
+func (m *StatusMetrics) XXX_DiscardUnknown() {
+	xxx_messageInfo_StatusMetrics.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StatusMetrics proto.InternalMessageInfo
+
+func (m *StatusMetrics) GetStatus() bool {
+	if m != nil {
+		return m.Status
+	}
+	return false
+}
+
 func init() {
 	proto.RegisterEnum("ScanMirrorRequest_Method", ScanMirrorRequest_Method_name, ScanMirrorRequest_Method_value)
 	proto.RegisterType((*VersionReply)(nil), "VersionReply")
@@ -1369,6 +1408,7 @@ func init() {
 	proto.RegisterType((*Metric)(nil), "Metric")
 	proto.RegisterType((*MetricsList)(nil), "MetricsList")
 	proto.RegisterType((*StatusAuto)(nil), "StatusAuto")
+	proto.RegisterType((*StatusMetrics)(nil), "StatusMetrics")
 }
 
 func init() { proto.RegisterFile("rpc.proto", fileDescriptor_77a6da22d6a3feb1) }
@@ -1503,6 +1543,7 @@ type CLIClient interface {
 	AddMetric(ctx context.Context, in *Metric, opts ...grpc.CallOption) (*empty.Empty, error)
 	DelMetric(ctx context.Context, in *Metric, opts ...grpc.CallOption) (*empty.Empty, error)
 	ListMetrics(ctx context.Context, in *Metric, opts ...grpc.CallOption) (*MetricsList, error)
+	GetStatusMetrics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*StatusMetrics, error)
 	EnableAuto(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
 	DisableAuto(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
 	GetStatusAuto(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*StatusAuto, error)
@@ -1680,6 +1721,15 @@ func (c *cLIClient) ListMetrics(ctx context.Context, in *Metric, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *cLIClient) GetStatusMetrics(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*StatusMetrics, error) {
+	out := new(StatusMetrics)
+	err := c.cc.Invoke(ctx, "/CLI/GetStatusMetrics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cLIClient) EnableAuto(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
 	err := c.cc.Invoke(ctx, "/CLI/EnableAuto", in, out, opts...)
@@ -1736,6 +1786,7 @@ type CLIServer interface {
 	AddMetric(context.Context, *Metric) (*empty.Empty, error)
 	DelMetric(context.Context, *Metric) (*empty.Empty, error)
 	ListMetrics(context.Context, *Metric) (*MetricsList, error)
+	GetStatusMetrics(context.Context, *empty.Empty) (*StatusMetrics, error)
 	EnableAuto(context.Context, *empty.Empty) (*empty.Empty, error)
 	DisableAuto(context.Context, *empty.Empty) (*empty.Empty, error)
 	GetStatusAuto(context.Context, *empty.Empty) (*StatusAuto, error)
@@ -1800,6 +1851,9 @@ func (*UnimplementedCLIServer) DelMetric(ctx context.Context, req *Metric) (*emp
 }
 func (*UnimplementedCLIServer) ListMetrics(ctx context.Context, req *Metric) (*MetricsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMetrics not implemented")
+}
+func (*UnimplementedCLIServer) GetStatusMetrics(ctx context.Context, req *empty.Empty) (*StatusMetrics, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStatusMetrics not implemented")
 }
 func (*UnimplementedCLIServer) EnableAuto(ctx context.Context, req *empty.Empty) (*empty.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnableAuto not implemented")
@@ -2142,6 +2196,24 @@ func _CLI_ListMetrics_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CLI_GetStatusMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CLIServer).GetStatusMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CLI/GetStatusMetrics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CLIServer).GetStatusMetrics(ctx, req.(*empty.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CLI_EnableAuto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(empty.Empty)
 	if err := dec(in); err != nil {
@@ -2289,6 +2361,10 @@ var _CLI_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMetrics",
 			Handler:    _CLI_ListMetrics_Handler,
+		},
+		{
+			MethodName: "GetStatusMetrics",
+			Handler: _CLI_GetStatusMetrics_Handler,
 		},
 		{
 			MethodName: "EnableAuto",
