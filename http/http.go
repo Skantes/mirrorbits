@@ -55,6 +55,15 @@ type HTTP struct {
 	stopped        bool
 	stoppedMutex   sync.Mutex
 	metrics        *Metrics
+	metricsLock    sync.RWMutex
+}
+
+// currentMetrics returns the running metrics instance, or nil when metrics
+// are disabled.
+func (h *HTTP) currentMetrics() *Metrics {
+	h.metricsLock.RLock()
+	defer h.metricsLock.RUnlock()
+	return h.metrics
 }
 
 // Templates is a struct embedding instances of the precompiled templates
@@ -150,13 +159,17 @@ func (h *HTTP) Reload() {
 	// Reload the GeoIP database
 	h.geoip.LoadGeoIP()
 
-	if config.GetConfig().MetricsEnabled && h.metrics == nil {
+	enabled := config.GetConfig().MetricsEnabled
+	h.metricsLock.Lock()
+	if enabled && h.metrics == nil {
 		log.Info("Configuration Reload: Metrics enabled")
 		h.metrics = NewMetrics(h.redis)
-	} else if h.metrics != nil {
+	} else if !enabled && h.metrics != nil {
+		h.metrics.Stop()
 		h.metrics = nil
 		log.Info("Configuration Reload: Metrics disabled")
 	}
+	h.metricsLock.Unlock()
 
 	// Reload the templates
 	h.templates.Lock()
@@ -379,8 +392,8 @@ func (h *HTTP) mirrorHandler(w http.ResponseWriter, r *http.Request, ctx *Contex
 	}
 
 	var isTracked = false
-	if config.GetConfig().MetricsEnabled {
-		isTracked, err = h.metrics.IsFileTracked(fileInfo.Path)
+	if m := h.currentMetrics(); m != nil {
+		isTracked, err = m.IsFileTracked(fileInfo.Path)
 		if err != nil {
 			log.Error("There was a problem fetching the tracked file list: ", err)
 		}

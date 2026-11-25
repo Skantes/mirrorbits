@@ -19,6 +19,7 @@ type Metrics struct {
 	metricsResponse string
 	lock            sync.Mutex
 	trackedFileList []string
+	stop            chan struct{}
 }
 
 type metricsUnit struct {
@@ -32,6 +33,7 @@ type metricsUnit struct {
 func NewMetrics(r *database.Redis) *Metrics {
 	metrics := Metrics{
 		metricsResponse: "",
+		stop:            make(chan struct{}),
 	}
 	go func() {
 		for {
@@ -43,10 +45,19 @@ func NewMetrics(r *database.Redis) *Metrics {
 			} else {
 				metrics.trackedFileList = trackedFiles
 			}
-			time.Sleep(2 * time.Minute)
+			select {
+			case <-metrics.stop:
+				return
+			case <-time.After(2 * time.Minute):
+			}
 		}
 	}()
 	return &metrics
+}
+
+// Stop terminates the background metrics refresh
+func (m *Metrics) Stop() {
+	close(m.stop)
 }
 
 func (m *Metrics) IsFileTracked(file string) (bool, error) {
@@ -366,10 +377,10 @@ func (m *Metrics) getMetrics(httpRedis *database.Redis) {
 }
 
 func (h *HTTP) metricsHandler(w http.ResponseWriter, r *http.Request) {
-	if config.GetConfig().MetricsEnabled {
-		h.metrics.lock.Lock()
-		output := h.metrics.metricsResponse
-		h.metrics.lock.Unlock()
+	if m := h.currentMetrics(); m != nil {
+		m.lock.Lock()
+		output := m.metricsResponse
+		m.lock.Unlock()
 		w.Write([]byte(output))
 		log.Debug("test")
 	} else {
