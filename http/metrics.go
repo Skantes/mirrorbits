@@ -185,16 +185,6 @@ func (m *Metrics) getMetrics(httpRedis *database.Redis) {
 		return
 	}
 
-	index = 0
-	for _, name := range fileList {
-		var metrics metricsUnit
-		metrics.Total, _ = redis.Int(stats[index], err)
-		metrics.Day, _ = redis.Int(stats[index+1], err)
-		metrics.Month, _ = redis.Int(stats[index+2], err)
-		metrics.Year, _ = redis.Int(stats[index+3], err)
-		output += statsToPrometheusFormat(metrics, "file", name)
-		index += 4
-	}
 	output += fileOutput
 
 	// Get all countries
