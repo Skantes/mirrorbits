@@ -301,11 +301,10 @@ func (h *HTTP) mirrorHandler(w http.ResponseWriter, r *http.Request, ctx *Contex
 	clientInfo := h.geoip.GetRecord(remoteIP) //TODO return a pointer?
 
 	if clientInfo.Country != "" {
-		err = h.redis.AddCountry(clientInfo.Country)
-	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		// Stats are best effort: never fail a download because of them
+		if err := h.redis.AddCountry(clientInfo.Country); err != nil {
+			log.Warningf("Failed to record country %s: %s", clientInfo.Country, err)
+		}
 	}
 
 	mlist, excluded, err := h.engine.Selection(ctx, h.cache, &fileInfo, clientInfo)
