@@ -848,7 +848,7 @@ func (c *CLI) AddMetric(ctx context.Context, in *Metric) (*empty.Empty, error) {
 
 	exists, err := redis.Int(conn.Do("SISMEMBER", "FILES", in.Filename))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to check for file presence")
+		return nil, fmt.Errorf("failed to check for file presence: %w", err)
 	} else if exists == 0 {
 		return nil, status.Error(codes.FailedPrecondition,
 			"file does not exist")
@@ -856,7 +856,7 @@ func (c *CLI) AddMetric(ctx context.Context, in *Metric) (*empty.Empty, error) {
 
 	exists, err = redis.Int(conn.Do("SADD", "TRACKED_FILES", in.Filename))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to add file to metrics")
+		return nil, fmt.Errorf("failed to add file to metrics: %w", err)
 	} else if exists == 0 {
 		return nil, status.Error(codes.AlreadyExists,
 			"file already is in metrics")
@@ -874,7 +874,7 @@ func (c *CLI) DelMetric(ctx context.Context, in *Metric) (*empty.Empty, error) {
 
 	exists, err := redis.Int(conn.Do("SISMEMBER", "TRACKED_FILES", in.Filename))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to check for file presence")
+		return nil, fmt.Errorf("failed to check for file presence: %w", err)
 	} else if exists == 0 {
 		return nil, status.Error(codes.FailedPrecondition,
 			"file is not part of tracked files")
@@ -882,7 +882,7 @@ func (c *CLI) DelMetric(ctx context.Context, in *Metric) (*empty.Empty, error) {
 
 	_, err = conn.Do("SREM", "TRACKED_FILES", in.Filename)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to remove file from tracked files")
+		return nil, fmt.Errorf("failed to remove file from tracked files: %w", err)
 	}
 
 	return &empty.Empty{}, nil
